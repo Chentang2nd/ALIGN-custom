@@ -1,0 +1,28 @@
+[
+  {
+    "constraint": "GroupBlocks",
+    "instance_name": "X_RLOAD",
+    "instances": [
+      "RLOAD"
+    ],
+    "template_name": "RES_2T",
+    "generator": {
+      "name": "res",
+      "parameters": null
+    },
+    "constraints": null
+  },
+  {
+    "constraint": "GroupBlocks",
+    "instance_name": "X_M1",
+    "instances": [
+      "M1"
+    ],
+    "template_name": "NMOS_S",
+    "generator": {
+      "name": "MOS",
+      "parameters": null
+    },
+    "constraints": null
+  }
+]

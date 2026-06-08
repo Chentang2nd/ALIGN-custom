@@ -66,8 +66,15 @@ def generate_MOS_primitive(pdkdir, block_name, primitive, height, nfin, x_cells,
 
     logger.debug(
         f"primitive pattern {primitive.name} {primitive.elements} {pattern}")
+    
+    # DEBUG LOGGING
+    logger.info(f"generate_MOS_primitive: primitive.name={primitive.name}, parameters_before={parameters}")
+    
     if 'model' not in parameters:
         parameters['model'] = 'NMOS' if 'NMOS' in primitive.name else 'PMOS'
+        
+    logger.info(f"generate_MOS_primitive: parameters_after={parameters}")
+
     def gen(pattern, routing):
         if 'NMOS' in primitive.name:
             uc.addNMOSArray(x_cells, y_cells, pattern, vt_type, routing, **parameters)
