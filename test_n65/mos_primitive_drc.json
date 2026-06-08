@@ -1,0 +1,363 @@
+{
+    "metadata": {
+        "name": "MOS Primitive DRC - Minimum Required Set",
+        "description": "Critical DRC rules for validating single NMOS/PMOS transistor layout correctness",
+        "pdk": "TSMC 65nm CRN65LP",
+        "source": "T-N65-CL-DR-001 v2.1 - Calibre DRC deck",
+        "priority_levels": {
+            "P0": "Critical - Device function failure if violated",
+            "P1": "Important - Reliability/yield issues if violated",
+            "P2": "Recommended - Interconnect quality",
+            "P3": "Optional - Array/dense layout only"
+        },
+        "unit": "micrometer (um)"
+    },
+    
+    "layer_mapping": {
+        "Active": {"gds_layer": 6, "gds_datatype": 0, "description": "Diffusion/OD"},
+        "Poly": {"gds_layer": 17, "gds_datatype": 0, "description": "Gate/Poly"},
+        "Contact": {"gds_layer": 30, "gds_datatype": 0, "description": "V0/CO"},
+        "M1": {"gds_layer": 31, "gds_datatype": 0, "description": "Metal1"},
+        "Nselect": {"gds_layer": 26, "gds_datatype": 0, "description": "N+ implant"},
+        "Pselect": {"gds_layer": 25, "gds_datatype": 0, "description": "P+ implant"}
+    },
+    
+    "mos_primitive_rules": {
+        "_comment": "Priority P0 - Absolutely critical for device function",
+        
+        "P0_rules": [
+            {
+                "rule_id": "PO.EX.1",
+                "priority": "P0",
+                "category": "extension",
+                "description": "Gate poly must extend beyond Active on both sides (endcap)",
+                "check": {
+                    "inner_layer": "Active",
+                    "outer_layer": "Poly",
+                    "overlap_region": "Poly AND Active",
+                    "min_extension": 0.06,
+                    "direction": "perpendicular_to_gate",
+                    "sides": "both"
+                },
+                "failure_impact": "Gate does not fully cover channel → severe leakage or device failure",
+                "verification_method": "For each poly-active intersection, measure poly overhang on active edges"
+            },
+            {
+                "rule_id": "CO.EN.1",
+                "priority": "P0",
+                "category": "enclosure",
+                "description": "Contact must be enclosed by Active (source/drain contacts)",
+                "check": {
+                    "inner_layer": "Contact",
+                    "outer_layer": "Active",
+                    "min_enclosure_all_sides": 0.05,
+                    "alternate_rule": "CO.EN.1.1"
+                },
+                "failure_impact": "Contact outside diffusion → open circuit or extremely high resistance",
+                "verification_method": "Check contact bounding box is inside active with ≥0.05um margin"
+            },
+            {
+                "rule_id": "CO.EN.1.1",
+                "priority": "P0",
+                "category": "enclosure",
+                "description": "Contact must be enclosed by Active on at least two opposite sides",
+                "check": {
+                    "inner_layer": "Contact",
+                    "outer_layer": "Active",
+                    "min_enclosure_opposite_sides": 0.06,
+                    "required_sides": 2,
+                    "opposite": true
+                },
+                "failure_impact": "Insufficient contact enclosure → contact resistance too high",
+                "verification_method": "Check contact has ≥0.06um margin on at least two opposite edges of active"
+            },
+            {
+                "rule_id": "CO.EN.2",
+                "priority": "P0",
+                "category": "enclosure",
+                "description": "Contact on Poly (gate contact) must be enclosed by Poly",
+                "check": {
+                    "inner_layer": "Contact",
+                    "outer_layer": "Poly",
+                    "min_enclosure_all_sides": 0.05,
+                    "region": "Contact NOT Active"
+                },
+                "failure_impact": "Gate contact outside poly → open gate connection",
+                "verification_method": "For contacts on poly (not on active), check ≥0.05um poly enclosure"
+            },
+            {
+                "rule_id": "NP.EN.1",
+                "priority": "P0",
+                "category": "enclosure",
+                "description": "N+ select must enclose Active for NMOS",
+                "check": {
+                    "inner_layer": "Active",
+                    "outer_layer": "Nselect",
+                    "min_enclosure_all_sides": 0.12,
+                    "device_type": "NMOS"
+                },
+                "failure_impact": "Incomplete N+ implant → source/drain not properly doped → device won't turn on",
+                "verification_method": "For NMOS, check Nselect completely covers active with ≥0.12um margin"
+            },
+            {
+                "rule_id": "PP.EN.1",
+                "priority": "P0",
+                "category": "enclosure",
+                "description": "P+ select must enclose Active for PMOS",
+                "check": {
+                    "inner_layer": "Active",
+                    "outer_layer": "Pselect",
+                    "min_enclosure_all_sides": 0.12,
+                    "device_type": "PMOS"
+                },
+                "failure_impact": "Incomplete P+ implant → source/drain not properly doped → device won't turn on",
+                "verification_method": "For PMOS, check Pselect completely covers active with ≥0.12um margin"
+            }
+        ],
+        
+        "_comment_P1": "Priority P1 - Important for reliability and yield",
+        
+        "P1_rules": [
+            {
+                "rule_id": "PO.S.2",
+                "priority": "P1",
+                "category": "spacing",
+                "description": "Gate spacing within same Active (source/drain length)",
+                "check": {
+                    "layer": "Poly",
+                    "region": "Poly AND Active",
+                    "min_spacing": 0.12,
+                    "same_active": true
+                },
+                "failure_impact": "Insufficient source/drain length → no room for contacts or punch-through",
+                "verification_method": "Measure distance between adjacent gate edges within same active region"
+            },
+            {
+                "rule_id": "OD.A.1",
+                "priority": "P1",
+                "category": "area",
+                "description": "Active minimum area",
+                "check": {
+                    "layer": "Active",
+                    "min_area": 0.02,
+                    "unit": "um^2"
+                },
+                "failure_impact": "Too small active → process window issues, potential device failure",
+                "verification_method": "Calculate area of each active polygon, flag if < 0.02 um²"
+            },
+            {
+                "rule_id": "PO.W.1",
+                "priority": "P1",
+                "category": "width",
+                "description": "Gate poly minimum width",
+                "check": {
+                    "layer": "Poly",
+                    "min_width": 0.06,
+                    "region": "gate_region_only"
+                },
+                "failure_impact": "Gate too narrow → high resistance, potential break",
+                "verification_method": "Measure minimum width of poly in gate region (poly AND active)"
+            },
+            {
+                "rule_id": "PO.L.1",
+                "priority": "P1",
+                "category": "length",
+                "description": "Gate poly minimum length (channel length)",
+                "check": {
+                    "layer": "Poly",
+                    "min_length": 0.06,
+                    "region": "crossing_active",
+                    "measured_in": "gate_direction"
+                },
+                "failure_impact": "Channel length too short → short channel effects, high leakage",
+                "verification_method": "Measure gate length in direction crossing active"
+            },
+            {
+                "rule_id": "CO.W.1",
+                "priority": "P1",
+                "category": "width",
+                "description": "Contact minimum size",
+                "check": {
+                    "layer": "Contact",
+                    "min_width": 0.09,
+                    "min_height": 0.09,
+                    "shape": "square_preferred"
+                },
+                "failure_impact": "Contact too small → high resistance, reliability issues",
+                "verification_method": "Check contact dimensions ≥ 0.09 x 0.09 um"
+            },
+            {
+                "rule_id": "OD.W.1",
+                "priority": "P1",
+                "category": "width",
+                "description": "Active minimum width",
+                "check": {
+                    "layer": "Active",
+                    "min_width": 0.08
+                },
+                "failure_impact": "Active too narrow → high resistance, process issues",
+                "verification_method": "Measure minimum width of active polygon"
+            }
+        ],
+        
+        "_comment_P2": "Priority P2 - Interconnect quality (important when routing beyond single device)",
+        
+        "P2_rules": [
+            {
+                "rule_id": "M1.EN.CO",
+                "priority": "P2",
+                "category": "enclosure",
+                "description": "M1 must enclose Contact",
+                "check": {
+                    "inner_layer": "Contact",
+                    "outer_layer": "M1",
+                    "min_enclosure_all_sides": 0.005
+                },
+                "failure_impact": "Poor M1-contact overlap → increased resistance or open circuit",
+                "verification_method": "Check M1 covers contact with ≥0.005um margin on all sides"
+            },
+            {
+                "rule_id": "M1.W.1",
+                "priority": "P2",
+                "category": "width",
+                "description": "M1 minimum width",
+                "check": {
+                    "layer": "M1",
+                    "min_width": 0.14
+                },
+                "failure_impact": "M1 too narrow → electromigration risk",
+                "verification_method": "Measure minimum width of M1 shapes"
+            },
+            {
+                "rule_id": "CO.S.1",
+                "priority": "P2",
+                "category": "spacing",
+                "description": "Contact to contact spacing",
+                "check": {
+                    "layer": "Contact",
+                    "min_spacing": 0.13
+                },
+                "failure_impact": "Contacts too close → bridging risk",
+                "verification_method": "Measure edge-to-edge distance between contacts"
+            }
+        ],
+        
+        "_comment_P3": "Priority P3 - Mainly for array/dense layouts",
+        
+        "P3_rules": [
+            {
+                "rule_id": "OD.S.1",
+                "priority": "P3",
+                "category": "spacing",
+                "description": "Active to Active spacing (device isolation)",
+                "check": {
+                    "layer": "Active",
+                    "min_spacing": 0.13
+                },
+                "failure_impact": "Insufficient isolation → punch-through between devices",
+                "verification_method": "Measure edge-to-edge distance between separate active regions",
+                "note": "Critical for multi-device layouts; less important for single isolated device"
+            },
+            {
+                "rule_id": "PO.S.1",
+                "priority": "P3",
+                "category": "spacing",
+                "description": "Poly to Poly spacing (not in same active)",
+                "check": {
+                    "layer": "Poly",
+                    "min_spacing": 0.11,
+                    "exclude_region": "same_active"
+                },
+                "failure_impact": "Poly lines too close → potential bridging",
+                "verification_method": "Measure spacing between separate poly lines",
+                "note": "Important for dense arrays; less critical for single device"
+            },
+            {
+                "rule_id": "M1.S.1",
+                "priority": "P3",
+                "category": "spacing",
+                "description": "M1 to M1 spacing",
+                "check": {
+                    "layer": "M1",
+                    "min_spacing": 0.09
+                },
+                "failure_impact": "Metal lines too close → shorting risk",
+                "verification_method": "Measure edge-to-edge distance between M1 shapes",
+                "note": "Important when routing multiple nets"
+            }
+        ]
+    },
+    
+    "typical_nmos_structure": {
+        "description": "Typical layer stack for a valid NMOS transistor",
+        "required_layers": [
+            {"layer": "Active", "role": "source/drain diffusion regions"},
+            {"layer": "Poly", "role": "gate crossing active to form channel"},
+            {"layer": "Nselect", "role": "N+ implant covering active"},
+            {"layer": "Contact", "role": "connects active/poly to M1"},
+            {"layer": "M1", "role": "top metal routing"}
+        ],
+        "topology": {
+            "gate": "Poly crosses Active perpendicular, forms channel",
+            "source_drain": "Active regions on both sides of gate",
+            "contacts": "On source/drain active and optionally on gate poly",
+            "implant": "Nselect must cover entire active region"
+        }
+    },
+    
+    "typical_pmos_structure": {
+        "description": "Typical layer stack for a valid PMOS transistor",
+        "required_layers": [
+            {"layer": "Active", "role": "source/drain diffusion regions"},
+            {"layer": "Poly", "role": "gate crossing active to form channel"},
+            {"layer": "Pselect", "role": "P+ implant covering active"},
+            {"layer": "Contact", "role": "connects active/poly to M1"},
+            {"layer": "M1", "role": "top metal routing"}
+        ],
+        "additional_requirements": [
+            {"layer": "Nwell", "rule": "Active must be inside Nwell for PMOS"}
+        ],
+        "topology": {
+            "gate": "Poly crosses Active perpendicular, forms channel",
+            "source_drain": "Active regions on both sides of gate",
+            "contacts": "On source/drain active and optionally on gate poly",
+            "implant": "Pselect must cover entire active region",
+            "well": "Entire device must be inside Nwell"
+        }
+    },
+    
+    "validation_workflow": {
+        "step1": {
+            "name": "Layer presence check",
+            "verify": ["Active", "Poly", "Contact", "M1", "Nselect OR Pselect"],
+            "fail_if": "Any required layer missing"
+        },
+        "step2": {
+            "name": "P0 rules - Critical geometry",
+            "verify": ["PO.EX.1", "CO.EN.1", "CO.EN.2", "NP.EN.1 OR PP.EN.1"],
+            "fail_if": "Any P0 rule violated → device will not function"
+        },
+        "step3": {
+            "name": "P1 rules - Reliability",
+            "verify": ["PO.S.2", "OD.A.1", "PO.W.1", "PO.L.1", "CO.W.1", "OD.W.1"],
+            "warn_if": "Any P1 rule violated → yield/reliability risk"
+        },
+        "step4": {
+            "name": "P2 rules - Interconnect",
+            "verify": ["M1.EN.CO", "M1.W.1", "CO.S.1"],
+            "warn_if": "P2 rule violated → routing quality degraded"
+        },
+        "step5": {
+            "name": "P3 rules - Array/spacing",
+            "verify": ["OD.S.1", "PO.S.1", "M1.S.1"],
+            "info_if": "P3 rule violated → OK for single device, fix for arrays"
+        }
+    },
+    
+    "usage_notes": {
+        "single_device": "For isolated MOS: P0 and P1 rules are mandatory. P2 optional. P3 can be ignored.",
+        "device_array": "For MOS arrays: All P0, P1, P2, P3 rules should be checked.",
+        "integration": "Load this JSON in check_nmos_gds.py and iterate through rules by priority.",
+        "limitations": "This set does not cover: well spacing, latch-up, antenna, density, ESD. Use full Calibre deck for tapeout."
+    }
+}

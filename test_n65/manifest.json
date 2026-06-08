@@ -1,0 +1,74 @@
+{
+  "name": "nmos-gds-drc-validator",
+  "version": "1.0.0",
+  "description": "NMOS GDS Layout DRC Validation and Visualization Tool for TSMC 65nm",
+  "author": "Claude Assistant",
+  "license": "MIT",
+  "type": "agent-skill",
+  "entry_point": "skill.py",
+  "capabilities": [
+    "gds-validation",
+    "drc-checking",
+    "layout-analysis",
+    "tsmc-65nm"
+  ],
+  "parameters": {
+    "gds_path": {
+      "type": "string",
+      "description": "Path to the GDS file to validate",
+      "required": true
+    },
+    "drc_json_path": {
+      "type": "string",
+      "description": "Path to DRC rules JSON file (optional)",
+      "required": false,
+      "default": "mos_primitive_drc.json"
+    },
+    "command": {
+      "type": "string",
+      "description": "Command to execute: 'validate' or 'visualize'",
+      "required": false,
+      "default": "validate",
+      "enum": ["validate", "visualize"]
+    },
+    "priority_filter": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": ["P0", "P1", "P2", "P3"]
+      },
+      "description": "DRC priority levels to check",
+      "required": false,
+      "default": ["P0", "P1"]
+    }
+  },
+  "dependencies": {
+    "python": ">=3.7",
+    "packages": [
+      {
+        "name": "gdstk",
+        "version": ">=0.9.0",
+        "description": "GDSII file manipulation library"
+      }
+    ]
+  },
+  "files": [
+    "skill.py",
+    "check_nmos_gds.py",
+    "visualize_drc_violations.py",
+    "mos_primitive_drc.json",
+    "skill.md",
+    "README.md"
+  ],
+  "metadata": {
+    "pdk": "TSMC 65nm CRN65LP",
+    "technology": "65nm",
+    "category": "layout-validation",
+    "tags": ["DRC", "GDS", "NMOS", "TSMC", "layout", "validation", "semiconductor"],
+    "drc_rules": {
+      "source": "Calibre DRC deck T-N65-CL-DR-001 v2.1",
+      "coverage": ["P0", "P1", "P2", "P3"],
+      "layers": ["Active", "Poly", "Contact", "M1", "Nselect", "Pselect"]
+    }
+  }
+}
